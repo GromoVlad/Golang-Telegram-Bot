@@ -5,8 +5,11 @@ import (
 	"encoding/xml"
 	"fmt"
 	"golang.org/x/net/html/charset"
+	"golang_telegram_bot/internal/DB"
 	currencyCode "golang_telegram_bot/internal/enums/currency/code"
-	currencyIcon "golang_telegram_bot/internal/enums/currency/icon"
+	"golang_telegram_bot/internal/models/currency"
+	"golang_telegram_bot/internal/models/currency/xmlCBRF"
+	"golang_telegram_bot/internal/repository/currencyRepository"
 	"io"
 	"log"
 	"net/http"
@@ -17,38 +20,29 @@ import (
 
 const CBRF_URL = "https://www.cbr.ru/scripts/XML_daily.asp?date_req="
 
-type CurrenciesCBRF struct {
-	XMLName  xml.Name       `xml:"ValCurs"`
-	Currency []CurrencyCBRF `xml:"Valute"`
+func GetCurrencies() map[string]*currency.Currency {
+	currencyTable := DB.Connect().Collection("currencies")
+	allCurrency := currencyRepository.GetAllCurrency(currencyTable)
+	currencies := make(map[string]*currency.Currency)
+	for _, currency := range allCurrency {
+		currencies[currency.Code] = currency
+	}
+
+	return currencies
 }
 
-type CurrencyCBRF struct {
-	NumCode  string `xml:"NumCode"`
-	CharCode string `xml:"CharCode"`
-	Nominal  string `xml:"Nominal"`
-	Name     string `xml:"Name"`
-	Value    string `xml:"Value"`
-}
-
-type Currency struct {
-	Amount float64
-	Icon   string
-	Name   string
-	Code   string
-}
-
-func GetActualCurrencies() map[string]Currency {
-	resp, err := http.Get(CBRF_URL + time.Now().Format("02/01/2006"))
+func UpdateCurrencies() {
+	response, err := http.Get(CBRF_URL + time.Now().Format("02/01/2006"))
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	currencies := new(CurrenciesCBRF)
+	currencies := new(xmlCBRF.Currencies)
 	reader := bytes.NewReader(body)
 	decoder := xml.NewDecoder(reader)
 	decoder.CharsetReader = charset.NewReaderLabel
@@ -57,14 +51,8 @@ func GetActualCurrencies() map[string]Currency {
 		fmt.Println(err)
 	}
 
-	fmt.Printf("%v\n\n", currencies)
-
-	necessaryCurrencies := make(map[string]Currency)
 	for _, currencyNode := range currencies.Currency {
-
 		var amount float64
-		var icon string
-
 		code := currencyNode.CharCode
 
 		nominal, err := strconv.ParseFloat(strings.ReplaceAll(currencyNode.Nominal, ",", "."), 64)
@@ -79,38 +67,16 @@ func GetActualCurrencies() map[string]Currency {
 		if code == currencyCode.USD || code == currencyCode.EUR || code == currencyCode.GBP ||
 			code == currencyCode.CHF || code == currencyCode.BYN {
 			amount = value
-			icon = currencyIcon.RUB
 		} else if code == currencyCode.UAH || code == currencyCode.HKD || code == currencyCode.TJS ||
 			code == currencyCode.CNY || code == currencyCode.TRY {
 			amount = value / nominal
-			icon = currencyIcon.RUB
-		} else if code == currencyCode.KGS {
+		} else if code == currencyCode.KGS || code == currencyCode.UZS || code == currencyCode.AMD ||
+			code == currencyCode.INR || code == currencyCode.KZT {
 			amount = nominal / value
-			icon = currencyIcon.KGS
-		} else if code == currencyCode.UZS {
-			amount = nominal / value
-			icon = currencyIcon.UZS
-		} else if code == currencyCode.AMD {
-			amount = nominal / value
-			icon = currencyIcon.AMD
-		} else if code == currencyCode.INR {
-			amount = nominal / value
-			icon = currencyIcon.INR
-		} else if code == currencyCode.KZT {
-			amount = nominal / value
-			icon = currencyIcon.KZT
 		}
 
-		if amount != 0.0 && icon != "" {
-			data := Currency{
-				Amount: amount,
-				Icon:   icon,
-				Name:   currencyNode.Name,
-				Code:   code,
-			}
-			necessaryCurrencies[code] = data
+		if amount != 0.0 {
+			currencyRepository.UpdateCurrency(code, amount)
 		}
 	}
-
-	return necessaryCurrencies
 }

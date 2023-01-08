@@ -1,64 +1,14 @@
-package sender
+package template
 
 import (
 	"fmt"
-	"github.com/go-co-op/gocron"
-	telegramBotAPI "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	currencyCode "golang_telegram_bot/internal/enums/currency/code"
-	"golang_telegram_bot/internal/repository/telegramBotRepository"
-	currencyService "golang_telegram_bot/internal/service/currency"
-	"log"
-	"os"
-	"time"
+	"golang_telegram_bot/internal/models/currency"
 )
 
-func RunCronJobs() {
-	scheduler := gocron.NewScheduler(time.UTC)
-	currencies := currencyService.GetActualCurrencies()
-	template := buildTemplate(currencies)
-
-	scheduler.Every(1).Cron("32 08 * * *").Do(func() {
-		headerTenHoursAmTemplate := "Ежедневные данные о курсах валют на 11:30 по Мск(GMT+3)\n\n" + template
-		dispatch(headerTenHoursAmTemplate)
-	})
-
-	scheduler.StartAsync()
-}
-
-type Client struct {
-	bot *telegramBotAPI.BotAPI
-}
-
-func New(apiKey string) *Client {
-	bot, err := telegramBotAPI.NewBotAPI(apiKey)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	return &Client{bot: bot}
-}
-
-func (c *Client) SendMessage(text string, chatId int64) error {
-	msg := telegramBotAPI.NewMessage(chatId, text)
-	msg.ParseMode = "Markdown"
-	_, err := c.bot.Send(msg)
-	return err
-}
-
-func dispatch(template string) {
-	client := New(os.Getenv("TELEGRAM_TOKEN"))
-	contacts := telegramBotRepository.FindSubscribers()
-
-	for _, value := range contacts {
-		err := client.SendMessage(template, int64(value.TelegramId))
-		if err != nil {
-			fmt.Println(err)
-		}
-	}
-}
-
-func buildTemplate(currencies map[string]currencyService.Currency) string {
-	return "💵 Курс $: " +
+func BuildTemplate(currencies map[string]*currency.Currency) string {
+	return "Ежедневные данные о курсах валют на 11:30 по Мск(GMT+3)\n\n" +
+		"💵 Курс $: " +
 		fmt.Sprintf("%.2f", currencies[currencyCode.USD].Amount) + currencies[currencyCode.USD].Icon +
 		"\n💶 Курс €: " +
 		fmt.Sprintf("%.2f", currencies[currencyCode.EUR].Amount) + currencies[currencyCode.EUR].Icon +

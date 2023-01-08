@@ -4,7 +4,7 @@ import (
 	"fmt"
 	telegramBotAPI "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	currencyCode "golang_telegram_bot/internal/enums/currency/code"
-	currencyService "golang_telegram_bot/internal/service/currency"
+	"golang_telegram_bot/internal/models/currency"
 )
 
 const (
@@ -27,7 +27,7 @@ func GetBaseKeyboard(isSubscribe bool) telegramBotAPI.ReplyKeyboardMarkup {
 	}
 }
 
-func GetCurrenciesKeyboard(currencies map[string]currencyService.Currency) telegramBotAPI.InlineKeyboardMarkup {
+func GetCurrenciesKeyboard(currencies map[string]*currency.Currency) telegramBotAPI.InlineKeyboardMarkup {
 	return telegramBotAPI.NewInlineKeyboardMarkup(
 		telegramBotAPI.NewInlineKeyboardRow(
 			telegramBotAPI.NewInlineKeyboardButtonData(

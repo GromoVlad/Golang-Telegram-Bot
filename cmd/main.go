@@ -1,19 +1,23 @@
 package main
 
 import (
-	"github.com/joho/godotenv"
-	telegramBotListener "golang_telegram_bot/internal/service/telegramBot/listener"
-	telegramBotSender "golang_telegram_bot/internal/service/telegramBot/sender"
-	"log"
+	"golang_telegram_bot/internal/jobs"
+	"golang_telegram_bot/internal/repository/currencyRepository"
+	currencyService "golang_telegram_bot/internal/service/currency"
+	"golang_telegram_bot/internal/service/telegramBot"
+	"time"
 )
 
 func main() {
-	/** Подгрудаем данные из .env */
-	if err := godotenv.Load(); err != nil {
-		log.Fatalf("error loading env variables: %s", err.Error())
-	}
+	// Запускаем стартовый seeder с шаблоном курсов валют
+	currencyRepository.StartSeedCurrency()
+	// Обновляем данные о валютах после seed-а
+	currencyService.UpdateCurrencies()
 
-	/** Старт служб Telegram бота */
-	telegramBotListener.StartBot()
-	telegramBotSender.RunCronJobs()
+	// Старт служб Telegram бота
+	go telegramBot.StartBot()
+	go jobs.RunCronJobs()
+
+	// Спим, пока работают горутины
+	time.Sleep(365 * 24 * time.Hour)
 }
