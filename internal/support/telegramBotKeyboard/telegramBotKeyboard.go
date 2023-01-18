@@ -11,18 +11,27 @@ const (
 	CURRENCY  = "Получить курсы валют ЦБ РФ 💵 📈"
 	DESCRIBE  = "Отписаться от рассылки курса валют ❌"
 	SUBSCRIBE = "Подписаться на рассылку курса валют 💬"
+	WEATHER   = "Какая сейчас погода? 🏖"
+	GEO       = "Я хочу обновить свои геоданные! 🧭"
 )
 
-func GetBaseKeyboard(isSubscribe bool) telegramBotAPI.ReplyKeyboardMarkup {
+func GetBaseKeyboard(isSubscribe bool, isUpdateGeolocation bool) telegramBotAPI.ReplyKeyboardMarkup {
+	weatherButton := telegramBotAPI.NewKeyboardButton(WEATHER)
+	weatherButton.RequestLocation = isUpdateGeolocation
+
 	if isSubscribe {
 		return telegramBotAPI.NewReplyKeyboard(
 			telegramBotAPI.NewKeyboardButtonRow(telegramBotAPI.NewKeyboardButton(CURRENCY)),
 			telegramBotAPI.NewKeyboardButtonRow(telegramBotAPI.NewKeyboardButton(DESCRIBE)),
+			telegramBotAPI.NewKeyboardButtonRow(weatherButton),
+			telegramBotAPI.NewKeyboardButtonRow(telegramBotAPI.NewKeyboardButton(GEO)),
 		)
 	} else {
 		return telegramBotAPI.NewReplyKeyboard(
 			telegramBotAPI.NewKeyboardButtonRow(telegramBotAPI.NewKeyboardButton(CURRENCY)),
 			telegramBotAPI.NewKeyboardButtonRow(telegramBotAPI.NewKeyboardButton(SUBSCRIBE)),
+			telegramBotAPI.NewKeyboardButtonRow(weatherButton),
+			telegramBotAPI.NewKeyboardButtonRow(telegramBotAPI.NewKeyboardButton(GEO)),
 		)
 	}
 }

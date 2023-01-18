@@ -5,7 +5,7 @@ import (
 	"golang_telegram_bot/internal/repository/currencyRepository"
 	currencyService "golang_telegram_bot/internal/service/currency"
 	"golang_telegram_bot/internal/service/telegramBot"
-	"time"
+	"net/http"
 )
 
 func main() {
@@ -18,6 +18,6 @@ func main() {
 	go telegramBot.StartBot()
 	go jobs.RunCronJobs()
 
-	// Спим, пока работают горутины
-	time.Sleep(365 * 24 * time.Hour)
+	// Стартуем бесконечный цикл
+	http.ListenAndServe(":8080", nil)
 }

@@ -13,12 +13,12 @@ func RunCronJobs() {
 	scheduler := gocron.NewScheduler(time.UTC)
 
 	// Запускаем планировщик для обновления данных курса валют с сайта ЦБ РФ
-	scheduler.Every(1).Cron("31 06 * * *").Do(func() {
+	scheduler.Every(1).Cron("31 08 * * *").Do(func() {
 		currencyService.UpdateCurrencies()
 	})
 
 	// Запускаем рассылку курса валют для подписчиков
-	scheduler.Every(1).Cron("32 06 * * *").Do(func() {
+	scheduler.Every(1).Cron("32 08 * * *").Do(func() {
 		currencies := currencyService.GetCurrencies()
 		template := templateForMailing.BuildTemplate(currencies)
 		sender.Dispatch(template)
