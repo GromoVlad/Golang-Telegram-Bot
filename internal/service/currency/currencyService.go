@@ -15,10 +15,9 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 )
 
-const CBRF_URL = "https://www.cbr.ru/scripts/XML_daily.asp?date_req="
+const ALTERNATIVE_CBRF_URL = "https://www.cbr-xml-daily.ru/daily.xml"
 
 func GetCurrencies() map[string]*currency.Currency {
 	currencyTable := DB.Connect().Collection("currencies")
@@ -32,7 +31,7 @@ func GetCurrencies() map[string]*currency.Currency {
 }
 
 func UpdateCurrencies() {
-	response, err := http.Get(CBRF_URL + time.Now().Format("02/01/2006"))
+	response, err := http.Get(ALTERNATIVE_CBRF_URL)
 	if err != nil {
 		fmt.Println(err)
 	}
