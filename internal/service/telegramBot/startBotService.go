@@ -4,10 +4,11 @@ import (
 	telegramBotAPI "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"golang_telegram_bot/internal/service/telegramBot/listener"
 	"log"
+	"os"
 )
 
 func StartBot() {
-	bot, err := telegramBotAPI.NewBotAPI("5682843715:AAGoZweYYwlde7doz7gmnTuq3_SQNUVwllY")
+	bot, err := telegramBotAPI.NewBotAPI(os.Getenv("TELEGRAM_TOKEN"))
 	if err != nil {
 		log.Panic(err)
 	}
