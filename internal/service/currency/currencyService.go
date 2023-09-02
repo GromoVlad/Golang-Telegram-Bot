@@ -1,23 +1,15 @@
 package currency
 
 import (
-	"bytes"
-	"encoding/xml"
 	"fmt"
-	"golang.org/x/net/html/charset"
 	"golang_telegram_bot/internal/DB"
 	currencyCode "golang_telegram_bot/internal/enums/currency/code"
 	"golang_telegram_bot/internal/models/currency"
-	"golang_telegram_bot/internal/models/currency/xmlCBRF"
 	"golang_telegram_bot/internal/repository/currencyRepository"
-	"io"
 	"log"
-	"net/http"
 	"strconv"
 	"strings"
 )
-
-const ALTERNATIVE_CBRF_URL = "https://www.cbr-xml-daily.ru/daily.xml"
 
 func GetCurrencies() map[string]*currency.Currency {
 	currencyTable := DB.Connect().Collection("currencies")
@@ -31,24 +23,7 @@ func GetCurrencies() map[string]*currency.Currency {
 }
 
 func UpdateCurrencies() {
-	response, err := http.Get(ALTERNATIVE_CBRF_URL)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	currencies := new(xmlCBRF.Currencies)
-	reader := bytes.NewReader(body)
-	decoder := xml.NewDecoder(reader)
-	decoder.CharsetReader = charset.NewReaderLabel
-	err = decoder.Decode(&currencies)
-	if err != nil {
-		fmt.Println(err)
-	}
+	currencies := currencyRepository.GetCBRFCurrency()
 
 	for _, currencyNode := range currencies.Currency {
 		var amount float64
@@ -78,4 +53,24 @@ func UpdateCurrencies() {
 			currencyRepository.UpdateCurrency(code, amount)
 		}
 	}
+}
+
+func GetActualQuotes() string {
+	actualCurrency := currencyRepository.GetActualCurrency()
+	actualCryptocurrency := currencyRepository.GetActualCryptocurrency()
+
+	return fmt.Sprintf(
+		"🇺🇸 Курс $: %.2f₽\n"+
+			"🇪🇺 Курс €: %.2f₽\n"+
+			"🇰🇿 Курс ₸ (за ₽): %.2f₸\n"+
+			"🇰🇿 Курс ₸ (за $): %.2f₸\n"+
+			"🔶 Курс BTC: %.0f $\n"+
+			"🔷 Курс ETH: %.0f $\n",
+		actualCurrency.Quotes.USDRUB,
+		actualCurrency.Quotes.USDRUB/actualCurrency.Quotes.USDEUR,
+		actualCurrency.Quotes.USDKZT/actualCurrency.Quotes.USDRUB,
+		actualCurrency.Quotes.USDKZT,
+		actualCryptocurrency.Rates.BTC,
+		actualCryptocurrency.Rates.ETH,
+	)
 }

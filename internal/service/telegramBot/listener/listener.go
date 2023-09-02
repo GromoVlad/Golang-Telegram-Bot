@@ -51,6 +51,9 @@ func MessageHandler(messageData *telegramBotAPI.Message, bot *telegramBotAPI.Bot
 		weather := weatherService.GetWeatherByGeo(geolocation.Latitude, geolocation.Longitude)
 		message.Text = template.BuildWeatherTemplate(weather)
 
+	case messageData.Text == telegramBotKeyboard.ACTUAL_CURRENCY:
+		message.Text = currencyService.GetActualQuotes()
+
 	case messageData.Location != nil:
 		createOrUpdateGeolocation(geolocation, messageData)
 		weather := weatherService.GetWeatherByGeo(messageData.Location.Latitude, messageData.Location.Longitude)
