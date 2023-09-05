@@ -24,7 +24,7 @@ func RunCronJobs() {
 		sender.Dispatch(template)
 	})
 
-	scheduler.Every(1).Cron("00 5-21/2 * * *").Do(func() {
+	  scheduler.Every(1).Cron("00 7-17/2 * * 1-5").Do(func() {
 		currencies := currencyService.GetActualQuotes()
 		sender.Dispatch(currencies)
 	})
